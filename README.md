@@ -10,6 +10,7 @@
 El sistema modela una red vial urbana de **25 intersecciones y 42 tramos bidireccionales** con congestión dinámica, permitiendo comparar algoritmos de búsqueda sobre grafos, inyectar cierres viales con recálculo reactivo selectivo y revertir operaciones de estado.
 
 🌐 **Demo en producción (VPS Contabo):** [https://urbanflow.decg3.com](https://urbanflow.decg3.com)
+📖
 
 ---
 
@@ -81,7 +82,7 @@ urbanflow-architecture/
 
 ```bash
 # 1. Clonar el repositorio
-git clone [https://github.com/David-prog-wed/urbanflow-architecture.git](https://github.com/David-prog-wed/urbanflow-architecture.git)
+git clone https://github.com/David-prog-wed/urbanflow-architecture.git
 cd urbanflow-architecture
 
 # 2. Crear y activar entorno virtual
@@ -112,5 +113,5 @@ Verificación rápida del contenedor:
 
 ```bash
 docker ps --filter "name=urbanflow-app"
-curl [http://127.0.0.1:8085/api/health](http://127.0.0.1:8085/api/health)
+curl http://127.0.0.1:8085/api/health
 ```
