@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UrbanFlow — Arquitectura de Navegación Adaptativa</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --panel: #111827;
+      --panel-alt: #1e293b;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --cyan: #22d3ee;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --violet: #a78bfa;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      padding: 18px;
+      line-height: 1.45;
+    }
+
+    .container {
+      max-width: 1360px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    header {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    header h1 {
+      font-size: 1.35rem;
+      letter-spacing: 0.3px;
+    }
+
+    header h1 span {
+      color: var(--cyan);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-top: 2px;
+    }
+
+    .badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: rgba(34, 211, 238, 0.1);
+      color: var(--cyan);
+    }
+
+    .badge.green {
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--emerald);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    .badge.violet {
+      background: rgba(167, 139, 250, 0.12);
+      color: var(--violet);
+      border-color: rgba(167, 139, 250, 0.35);
+    }
+
+    .grid-main {
+      display: grid;
+      grid-template-columns: 1.65fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 1024px) {
+      .grid-main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      margin-bottom: 10px;
+      color: #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .hint {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    #map-svg {
+      width: 100%;
+      height: 525px;
+      background: radial-gradient(circle at top, #0f172a, #090e1a);
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      display: block;
+    }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .line-sample {
+      width: 18px;
+      height: 4px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .controls-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    select,
+    button {
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel-alt);
+      color: var(--text);
+      font-size: 0.88rem;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.08s ease, opacity 0.15s ease;
+    }
+
+    button:hover {
+      opacity: 0.92;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7, #06b6d4);
+      border: none;
+      color: #fff;
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #dc2626, #ef4444);
+      border: none;
+      color: #fff;
+    }
+
+    .btn-warn {
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      border: none;
+      color: #111827;
+    }
+
+    .btn-ghost {
+      background: var(--panel-alt);
+      color: var(--text);
+    }
+
+    .btn-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .metric {
+      background: var(--panel-alt);
+      border: 1px solid #293548;
+      border-radius: 9px;
+      padding: 10px 12px;
+    }
+
+    .metric .label {
+      font-size: 0.74rem;
+      color: var(--muted);
+    }
+
+    .metric .value {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-top: 2px;
+      color: var(--cyan);
+    }
+
+    .metric .value.green {
+      color: var(--emerald);
+    }
+
+    .metric .value.amber {
+      color: var(--amber);
+    }
+
+    .alert-box {
+      padding: 11px 13px;
+      border-radius: 9px;
+      font-size: 0.83rem;
+      border: 1px solid var(--border);
+      background: #172033;
+      color: #cbd5e1;
+    }
+
+    .alert-box.triggered {
+      background: rgba(245, 158, 11, 0.14);
+      border-color: rgba(245, 158, 11, 0.55);
+      color: #fde68a;
+    }
+
+    .alert-box.ignored {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.45);
+      color: #a7f3d0;
+    }
+
+    .history-list {
+      list-style: none;
+      max-height: 150px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.8rem;
+    }
+
+    .history-list li {
+      background: var(--panel-alt);
+      padding: 6px 9px;
+      border-radius: 6px;
+      border-left: 3px solid var(--violet);
+      color: #cbd5e1;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 0.86rem;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      background: #0f172a;
+    }
+
+    tr.highlight {
+      background: rgba(34, 211, 238, 0.08);
+    }
+
+    .bar-wrap {
+      width: 100%;
+      background: #1e293b;
+      border-radius: 99px;
+      height: 10px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: var(--cyan);
+    }
+
+    .bar-fill.bfs {
+      background: var(--red);
+    }
+
+    .bar-fill.dijkstra {
+      background: var(--amber);
+    }
+
+    .bar-fill.astar {
+      background: var(--emerald);
+    }
+
+    .edge-hit {
+      cursor: pointer;
+    }
+
+    .edge-hit:hover {
+      stroke-opacity: 1 !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1><span>UrbanFlow</span> — Motor de Navegación Urbana Adaptativa</h1>
+        <div class="subtitle">Arquitectura de Software · 25 intersecciones · 42 tramos · VPS Contabo
+          (urbanflow.decg3.com)</div>
+      </div>
+      <div class="badges">
+        <span class="badge">Strategy (BFS / Dijkstra / A*)</span>
+        <span class="badge green">Observer (Recálculo Selectivo)</span>
+        <span class="badge violet">Command (Historial + Undo)</span>
+      </div>
+    </header>
+
+    <div class="grid-main">
+      <!-- PANEL IZQUIERDO: MAPA SVG -->
+      <div class="card">
+        <h2>
+          Mapa de Red Urbana en Tiempo Real
+          <span class="hint">Haz clic en cualquier tramo para seleccionarlo y simular tráfico o cierre</span>
+        </h2>
+        <svg id="map-svg" viewBox="0 0 840 520"></svg>
+        <div class="legend">
+          <div class="legend-item"><span class="line-sample" style="background:#22d3ee;"></span> Ruta activa</div>
+          <div class="legend-item"><span class="line-sample" style="background:#f59e0b;"></span> Congestión (&gt;1.5x)
+          </div>
+          <div class="legend-item"><span class="line-sample" style="background:#ef4444;"></span> Tramo bloqueado</div>
+          <div class="legend-item"><span class="dot" style="background:#10b981;"></span> Origen</div>
+          <div class="legend-item"><span class="dot" style="background:#8b5cf6;"></span> Destino</div>
+          <div class="legend-item"><span class="dot" style="background:#fbbf24;"></span> Nodos explorados por el
+            algoritmo</div>
+        </div>
+      </div>
+
+      <!-- PANEL DERECHO: CONTROLES, MÉTRICAS, OBSERVER Y COMMAND -->
+      <div class="controls-stack">
+        <div class="card">
+          <h2>1. Estrategia de Navegación (Strategy)</h2>
+          <div class="form-row">
+            <div>
+              <label for="origen-select">Origen</label>
+              <select id="origen-select"></select>
+            </div>
+            <div>
+              <label for="destino-select">Destino</label>
+              <select id="destino-select"></select>
+            </div>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <label for="estrategia-select">Algoritmo de ruteo</label>
+            <select id="estrategia-select">
+              <option value="astar">A* Adaptativo (Tráfico + Heurística)</option>
+              <option value="dijkstra">Dijkstra (Distancia física mínima)</option>
+              <option value="bfs">BFS Simple (No informado - Línea base)</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="calcularRuta()">Calcular Ruta</button>
+          <div class="btn-group">
+            <button class="btn-ghost" onclick="deshacer()">↩ Deshacer (Undo)</button>
+            <button class="btn-ghost" onclick="reiniciar()">↻ Reiniciar Mapa</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>2. Métricas de la Ruta Actual</h2>
+          <div class="metrics-grid">
+            <div class="metric">
+              <div class="label">Nodos explorados</div>
+              <div class="value amber" id="m-visitados">-</div>
+            </div>
+            <div class="metric">
+              <div class="label">Tiempo de cómputo</div>
+              <div class="value" id="m-computo">-</div>
+            </div>
+            <div class="metric">
+              <div class="label">Distancia física</div>
+              <div class="value" id="m-distancia">-</div>
+            </div>
+            <div class="metric">
+              <div class="label">Tiempo con tráfico</div>
+              <div class="value green" id="m-tiempo">-</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>
+            3. Monitor de Incidentes (Observer)
+            <span class="hint" id="observer-stats">Recálculos: 0 | Ignorados: 0</span>
+          </h2>
+          <div style="margin-bottom: 8px;">
+            <label for="tramo-select">Tramo seleccionado (o haz clic en el mapa)</label>
+            <select id="tramo-select"></select>
+          </div>
+          <div class="btn-group" style="margin-bottom: 10px;">
+            <button class="btn-danger" onclick="simularIncidente(true, 1.0)">⛔ Bloquear Tramo</button>
+            <button class="btn-warn" onclick="simularIncidente(false, 3.5)">🚦 Tráfico 3.5x</button>
+          </div>
+          <div id="observer-alert" class="alert-box">
+            Sin incidentes reportados todavía. Bloquea un tramo de la ruta cian para ver el recálculo automático, o uno
+            fuera de la ruta para validar el ahorro de CPU.
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>4. Historial de Comandos (Command)</h2>
+          <ul id="history-list" class="history-list"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL INFERIOR: BENCHMARK 100 RUTAS -->
+    <div class="card">
+      <h2>
+        5. Evaluación Experimental — Benchmark Comparativo (100 Rutas Aleatorias)
+        <button class="btn-primary" style="width:auto; padding: 8px 16px;" onclick="correrBenchmark()">▶ Ejecutar
+          Benchmark (100 rutas)</button>
+      </h2>
+      <div id="benchmark-container">
+        <p class="hint">Presiona el botón superior para ejecutar 100 pares (origen, destino) idénticos con BFS, Dijkstra
+          y A* directamente en el servidor.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let appState = null;
+
+    async function api(url, method = 'GET', body = null) {
+      const opts = { method, headers: { 'Content-Type': 'application/json' } };
+      if (body) opts.body = JSON.stringify(body);
+      const res = await fetch(url, opts);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    function poblarSelects(state) {
+      const origSel = document.getElementById('origen-select');
+      const destSel = document.getElementById('destino-select');
+      const tramoSel = document.getElementById('tramo-select');
+
+      if (origSel.options.length === 0) {
+        state.grafo.nodos.forEach(n => {
+          origSel.add(new Option(`${n.id} — ${n.nombre}`, n.id));
+          destSel.add(new Option(`${n.id} — ${n.nombre}`, n.id));
+        });
+      }
+      if (state.ruta_actual) {
+        origSel.value = state.ruta_actual.origen;
+        destSel.value = state.ruta_actual.destino;
+      }
+      document.getElementById('estrategia-select').value = state.estrategia_actual;
+
+      const tramoActual = tramoSel.value;
+      tramoSel.innerHTML = '';
+      state.grafo.aristas.forEach(a => {
+        const tag = a.bloqueado ? ' [BLOQUEADO]' : (a.factor_trafico > 1.5 ? ` [Tráfico ${a.factor_trafico}x]` : '');
+        tramoSel.add(new Option(`${a.id}: ${a.origen} ↔ ${a.destino} (${a.distancia_km} km)${tag}`, a.id));
+      });
+      if (tramoActual) {
+        tramoSel.value = tramoActual;
+      } else if (state.ruta_actual && state.ruta_actual.aristas_camino.length > 0) {
+        tramoSel.value = state.ruta_actual.aristas_camino[Math.floor(state.ruta_actual.aristas_camino.length / 2)];
+      }
+    }
+
+    function renderMapa(state) {
+      const svg = document.getElementById('map-svg');
+      svg.innerHTML = '';
+      const ns = 'http://www.w3.org/2000/svg';
+
+      const nodosMap = {};
+      state.grafo.nodos.forEach(n => { nodosMap[n.id] = n; });
+
+      const ruta = state.ruta_actual;
+      const aristasRuta = new Set(ruta ? ruta.aristas_camino : []);
+      const visitados = new Set(ruta ? ruta.nodos_visitados : []);
+      const enCamino = new Set(ruta ? ruta.camino : []);
+      const tramoSeleccionado = document.getElementById('tramo-select').value;
+
+      // Dibujar aristas
+      state.grafo.aristas.forEach(a => {
+        const n1 = nodosMap[a.origen];
+        const n2 = nodosMap[a.destino];
+        const esRuta = aristasRuta.has(a.id);
+
+        let stroke = '#334155';
+        let width = 3;
+        let dash = '';
+
+        if (a.bloqueado) {
+          stroke = '#ef4444';
+          width = 4;
+          dash = '6,5';
+        } else if (esRuta) {
+          stroke = '#22d3ee';
+          width = 6;
+        } else if (a.factor_trafico >= 2.5) {
+          stroke = '#f97316';
+          width = 4;
+        } else if (a.factor_trafico > 1.4) {
+          stroke = '#f59e0b';
+          width = 3.5;
+        }
+
+        const line = document.createElementNS(ns, 'line');
+        line.setAttribute('x1', n1.x);
+        line.setAttribute('y1', n1.y);
+        line.setAttribute('x2', n2.x);
+        line.setAttribute('y2', n2.y);
+        line.setAttribute('stroke', stroke);
+        line.setAttribute('stroke-width', a.id === tramoSeleccionado ? width + 2 : width);
+        line.setAttribute('stroke-linecap', 'round');
+        line.setAttribute('stroke-opacity', esRuta || a.bloqueado ? '1' : '0.82');
+        if (dash) line.setAttribute('stroke-dasharray', dash);
+        line.classList.add('edge-hit');
+        line.addEventListener('click', () => {
+          document.getElementById('tramo-select').value = a.id;
+          renderMapa(appState);
+        });
+        svg.appendChild(line);
+
+        // Etiqueta discreta del tramo (tráfico o bloqueo)
+        const mx = (n1.x + n2.x) / 2;
+        const my = (n1.y + n2.y) / 2;
+        if (a.bloqueado || a.factor_trafico > 1.5 || esRuta) {
+          const txt = document.createElementNS(ns, 'text');
+          txt.setAttribute('x', mx);
+          txt.setAttribute('y', my - 6);
+          txt.setAttribute('text-anchor', 'middle');
+          txt.setAttribute('font-size', '10');
+          txt.setAttribute('font-weight', '700');
+          txt.setAttribute('fill', a.bloqueado ? '#fca5a5' : (esRuta ? '#cffafe' : '#fde68a'));
+          txt.textContent = a.bloqueado ? `✖ ${a.id}` : `${a.id} (${a.factor_trafico}x)`;
+          svg.appendChild(txt);
+        }
+      });
+
+      // Dibujar nodos
+      state.grafo.nodos.forEach(n => {
+        const esOrigen = ruta && ruta.origen === n.id;
+        const esDestino = ruta && ruta.destino === n.id;
+        const esCamino = enCamino.has(n.id);
+        const esVisitado = visitados.has(n.id);
+
+        if (esVisitado && !esOrigen && !esDestino) {
+          const halo = document.createElementNS(ns, 'circle');
+          halo.setAttribute('cx', n.x);
+          halo.setAttribute('cy', n.y);
+          halo.setAttribute('r', '18');
+          halo.setAttribute('fill', esCamino ? 'rgba(34,211,238,0.18)' : 'rgba(251,191,36,0.22)');
+          svg.appendChild(halo);
+        }
+
+        const circle = document.createElementNS(ns, 'circle');
+        circle.setAttribute('cx', n.x);
+        circle.setAttribute('cy', n.y);
+        circle.setAttribute('r', esOrigen || esDestino ? '14' : '11');
+        let fill = '#1e293b';
+        let stroke = '#64748b';
+        if (esOrigen) { fill = '#10b981'; stroke = '#a7f3d0'; }
+        else if (esDestino) { fill = '#8b5cf6'; stroke = '#ddd6fe'; }
+        else if (esCamino) { fill = '#0891b2'; stroke = '#67e8f9'; }
+        else if (esVisitado) { fill = '#78350f'; stroke = '#fbbf24'; }
+
+        circle.setAttribute('fill', fill);
+        circle.setAttribute('stroke', stroke);
+        circle.setAttribute('stroke-width', '2.2');
+        svg.appendChild(circle);
+
+        const idText = document.createElementNS(ns, 'text');
+        idText.setAttribute('x', n.x);
+        idText.setAttribute('y', n.y + 3.5);
+        idText.setAttribute('text-anchor', 'middle');
+        idText.setAttribute('font-size', '9.5');
+        idText.setAttribute('font-weight', '700');
+        idText.setAttribute('fill', '#ffffff');
+        idText.textContent = n.id;
+        svg.appendChild(idText);
+
+        const nameText = document.createElementNS(ns, 'text');
+        nameText.setAttribute('x', n.x);
+        nameText.setAttribute('y', n.y + 24);
+        nameText.setAttribute('text-anchor', 'middle');
+        nameText.setAttribute('font-size', '9.5');
+        nameText.setAttribute('fill', '#94a3b8');
+        nameText.textContent = n.nombre;
+        svg.appendChild(nameText);
+      });
+    }
+
+    function renderPaneles(state) {
+      const r = state.ruta_actual;
+      document.getElementById('m-visitados').textContent = r ? `${r.cantidad_visitados} / 25` : '-';
+      document.getElementById('m-computo').textContent = r ? `${r.tiempo_computo_ms.toFixed(4)} ms` : '-';
+      document.getElementById('m-distancia').textContent = r && r.encontrada ? `${r.distancia_km} km` : 'Sin ruta';
+      document.getElementById('m-tiempo').textContent = r && r.encontrada ? `${r.tiempo_min} min` : 'Sin ruta';
+
+      document.getElementById('observer-stats').textContent =
+        `Recálculos: ${state.recalculos_automaticos} | Ignorados: ${state.eventos_ignorados}`;
+
+      const alertBox = document.getElementById('observer-alert');
+      if (state.ultima_alerta_observer) {
+        alertBox.textContent = state.ultima_alerta_observer.mensaje;
+        alertBox.className = 'alert-box ' + (state.ultima_alerta_observer.recalculado ? 'triggered' : 'ignored');
+      } else {
+        alertBox.className = 'alert-box';
+        alertBox.textContent = 'Sin incidentes reportados todavía. Haz clic en un tramo de la ruta cian y bloquéalo para activar Observer.';
+      }
+
+      const hist = document.getElementById('history-list');
+      hist.innerHTML = '';
+      state.historial_comandos.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        hist.appendChild(li);
+      });
+    }
+
+    function actualizarUI(state) {
+      appState = state;
+      poblarSelects(state);
+      renderMapa(state);
+      renderPaneles(state);
+    }
+
+    async function cargarInicial() {
+      const state = await api('/api/state');
+      actualizarUI(state);
+    }
+
+    async function calcularRuta() {
+      const origen = document.getElementById('origen-select').value;
+      const destino = document.getElementById('destino-select').value;
+      const estrategia = document.getElementById('estrategia-select').value;
+      const state = await api('/api/route', 'POST', { origen, destino, estrategia });
+      actualizarUI(state);
+    }
+
+    async function simularIncidente(bloqueado, factor) {
+      const arista_id = document.getElementById('tramo-select').value;
+      const state = await api('/api/incident', 'POST', {
+        arista_id,
+        factor_trafico: factor,
+        bloqueado
+      });
+      actualizarUI(state);
+    }
+
+    async function deshacer() {
+      const state = await api('/api/undo', 'POST');
+      actualizarUI(state);
+    }
+
+    async function reiniciar() {
+      const state = await api('/api/reset', 'POST');
+      actualizarUI(state);
+    }
+
+    async function correrBenchmark() {
+      const cont = document.getElementById('benchmark-container');
+      cont.innerHTML = '<p class="hint">Ejecutando 100 consultas por estrategia en el servidor...</p>';
+      const data = await api('/api/benchmark?iteraciones=100');
+
+      const maxVis = Math.max(...data.resultados.map(x => x.nodos_visitados_prom), 1);
+      const maxMin = Math.max(...data.resultados.map(x => x.tiempo_trayecto_min_prom), 1);
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>Estrategia</th>
+              <th>Nodos visitados (prom.)</th>
+              <th>Reducción vs. BFS</th>
+              <th>Cómputo servidor (ms)</th>
+              <th>Distancia prom. (km)</th>
+              <th>Tiempo trayecto con tráfico (min)</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      data.resultados.forEach(row => {
+        const cls = row.codigo === 'astar' ? 'highlight' : '';
+        const wVis = (row.nodos_visitados_prom / maxVis) * 100;
+        const wMin = (row.tiempo_trayecto_min_prom / maxMin) * 100;
+        html += `
+          <tr class="${cls}">
+            <td><strong>${row.estrategia}</strong></td>
+            <td>
+              ${row.nodos_visitados_prom} nodos
+              <div class="bar-wrap"><div class="bar-fill ${row.codigo}" style="width:${wVis}%"></div></div>
+            </td>
+            <td><strong>${row.reduccion_vs_bfs_pct > 0 ? '-' : ''}${row.reduccion_vs_bfs_pct}%</strong></td>
+            <td>${row.tiempo_computo_ms_prom} ms</td>
+            <td>${row.distancia_km_prom} km</td>
+            <td>
+              <strong>${row.tiempo_trayecto_min_prom} min</strong>
+              <div class="bar-wrap"><div class="bar-fill ${row.codigo}" style="width:${wMin}%"></div></div>
+            </td>
+          </tr>
+        `;
+      });
+      html += '</tbody></table>';
+      cont.innerHTML = html;
+    }
+
+    cargarInicial();
+  </script>
+</body>
+
+</html>
