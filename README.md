@@ -9,8 +9,11 @@
 
 El sistema modela una red vial urbana de **25 intersecciones y 42 tramos bidireccionales** con congestión dinámica, permitiendo comparar algoritmos de búsqueda sobre grafos, inyectar cierres viales con recálculo reactivo selectivo y revertir operaciones de estado.
 
-🌐 **Demo en producción (VPS Contabo):** [https://urbanflow.decg3.com](https://urbanflow.decg3.com)
-📖
+🌐 **Demo en producción (VPS Contabo):**  
+https://urbanflow.decg3.com
+
+📄 **Swagger UI (OpenAPI 3.0):**  
+https://urbanflow.decg3.com/docs
 
 ---
 
